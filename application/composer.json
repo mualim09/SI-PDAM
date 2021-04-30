@@ -1,0 +1,9 @@
+{
+    "require": {
+        "fakerphp/faker": "^1.13",
+        "dompdf/dompdf": "^1.0",
+        "phpoffice/phpword": "^0.18.1",
+        "chriskacerguis/codeigniter-restserver": "^3.1"
+      
+    }
+}
