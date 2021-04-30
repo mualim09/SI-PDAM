@@ -1,8 +1,9 @@
-<?php 
-        
-defined('BASEPATH') OR exit('No direct script access allowed');
-        
-class Petugas extends CI_Controller {
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class Petugas extends CI_Controller
+{
 
     public function __construct()
     {
@@ -10,10 +11,7 @@ class Petugas extends CI_Controller {
     }
     public function index()
     {
-                
     }
 }
         
     /* End of file  Petugas.php */
-        
-                            
