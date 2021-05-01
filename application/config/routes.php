@@ -54,6 +54,11 @@ $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
 
+// petugas 
+$route['petugas'] = 'PetugasLapangan/Petugas';
+$route['caripelanggan'] = 'PetugasLapangan/Petugas/cariIDPelanggan';
+
+
 /// pelanggan 
 $route['pelanggan-lama'] = 'pelanggan/pelanggan';
 $route['detailpelangganlama/(:num)'] = 'pelanggan/pelanggan/detaiPelangganLama/$1';
