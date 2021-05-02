@@ -37,7 +37,8 @@ class Petugas extends CI_Controller
 
         $id = $this->input->post('idpelanggan', true);
 
-        $this->db->select('data_lama_pelanggan.Nama as Nama, 
+        $this->db->select('
+        data_lama_pelanggan.Nama as Nama, 
         data_lama_pelanggan.FotoRumah as fotorumah, 
         data_lama_pelanggan.Alamat as alamatrumah, 
         data_lama_pelanggan.no_input as no_input, 
@@ -107,11 +108,234 @@ class Petugas extends CI_Controller
         }
     }
 
+    public function prosesCatat()
+    {
+        $idpelanggan = $this->input->post('idpelanggan', true);
+
+
+        $this->load->library('upload');
+        $config['upload_path'] = './assets/img/foto_meteran/'; //path folder
+        $config['allowed_types'] = 'jpg|png|jpeg'; //type yang dapat diakses bisa anda sesuaikan
+        $config['max_size'] = 0;
+        // $config['encrypt_name'] = TRUE; //Enkripsi nama yang terupload
+
+        $new_name = date("Ymd") . "-" . time();
+        $config['file_name'] = $new_name;
+
+        $this->upload->initialize($config);
+        if (!empty($_FILES['fotometer']['name'])) {
+
+            if ($this->upload->do_upload('fotometer')) {
+
+                $gbr = $this->upload->data();
+                //Compress Image
+
+                $config['image_library'] = 'gd2';
+                $config['source_image'] = './assets/img/foto_meteran/' . $gbr['file_name'];
+                $config['create_thumb'] = FALSE;
+                $config['maintain_ratio'] = FALSE;
+                $config['quality'] = '50%';
+
+                $config['width'] = 600;
+                $config['height'] = 400;
+                $config['new_image'] = './assets/img/foto_meteran/' . $gbr['file_name'];
+                $this->load->library('image_lib', $config);
+                $this->image_lib->resize();
+
+                $gambar = $gbr['file_name'];
+
+
+                // untuk mendapatkan meteranlalu 
+                // $this->db->order_by('Periode', 'DESC');
+
+                $hasil = $this->db->get_where('data_drd', ['IDPelanggan' => $idpelanggan])->result_array();
+                $datax =
+                    [
+                        'Periode' => $hasil[0]['Periode'],
+                        'MeterLalu' => $hasil[0]['MeterLalu'],
+                        'MeterKini' => $hasil[0]['MeterKini'], // menjadi meteran sekarang
+                        'Cabang' => $hasil[0]['Cabang'], // menjadi meteran sekarang
+                        'KodeGol' => $hasil[0]['KodeGol'],
+                        'IDGol' => $hasil[0]['IDGol'],
+
+                    ];
+
+                $awal = $datax['MeterKini'];
+                $akhir = $this->input->post('nomormeteran', true);
+
+                $kubikasi = $akhir - $awal;
+
+
+                $inputan = [
+                    'Invoice' => date("Ym"),
+                    'IDPelanggan' => 1,
+                    'Cabang' => $datax['Cabang'],
+                    'Periode' => date("Ym"),
+                    'BulanRekening' => date("F-Y"),
+                    'KodeGol' =>  $datax['KodeGol'],
+                    'IDGol' => $datax['IDGol'],
+                    'MeterLalu' => $datax['MeterLalu'],
+                    'MeterKini' => $this->input->post('nomormeteran', true),
+                    'Kubikasi' => $kubikasi,
+                    'FotoMeteran' => $gambar,
+                    'PetugasMeter' => 1, // id session petugas
+                    'TanggalCatat' => date("Y-m-d H:i:s"),
+                    'images' => $gbr
+
+                ];
+
+                $this->db->insert('data_drd', $inputan);
+
+
+                echo "<pre>";
+                print_r($inputan);
+                echo "</pre>";
+            } else {
+                $error = array('error' => $this->upload->display_errors());
+                print_r($error);
+            }
+        } else {
+            echo "Image yang diupload kosong";
+        }
+
+
+        // $config['upload_path'] = './assets/img/foto_meteran/';
+        // $config['allowed_types'] = 'jpeg|jpg|png';
+        // $config['max_size'] = 30000;
+        // $config['max_width'] = 1500;
+        // $config['max_height'] = 1500;
+        // // $config['encrypt_name'] = TRUE;
+        // $new_name = date("Yd") . "-" . time();
+        // $config['file_name'] = $new_name;
+
+
+        // $this->load->library('upload', $config);
+
+        // if (!$this->upload->do_upload('fotometer')) {
+        //     $error = array('error' => $this->upload->display_errors());
+        //     print_r($error);
+        // } else {
+        //     $data = array('image_metadata' => $this->upload->data());
+        //     echo "<pre>";
+        //     print_r($data);
+        //     echo "</pre>";
+
+        //     $dataInput = [
+        //         'MeteranKini' => $this->input->post('nomormeteran', true),
+        //         'FotoMemteran' => $this->upload->data('file_name'),
+        //         'Periode' => date("Yd"),
+        //         'Bulan' => date("F-d")
+        //     ];
+
+        //     print_r($dataInput);
+        // }
+    }
+
+
+
     public function inputMeteran($idpelanggan)
     {
-        // wilayah di gunakan untuk mengelompokan pelanggan di wilayah tersebut.
+        $this->_css();
+        // DAPATKAN DATA DRD PALING TERAKHIR BERDASARKAN PERIODE 
+        $datapelanggan = $this->db->get_where('data_lama_pelanggan', ['idPelanggan' => $idpelanggan])->row_array();
+
+        $periode = date("Ym");
+
+        $this->db->where('Periode', $periode);
+        $this->db->where('IDPelanggan', $idpelanggan);
+        $dataInputan = $this->db->get('data_drd')->num_rows();
 
 
+        $data = [
+            'konten' => [
+                'isi' => ['Petugas/input_meteran'],
+                'info' => 'petugas/page'
+
+            ],
+            'pelanggan' => $datapelanggan,
+            'dataInputan' => $dataInputan
+        ];
+        $this->load->view('welcome_message', $data);
+
+        // die();
+        // $this->db->order_by('Periode', 'DESC');
+
+        // $hasil = $this->db->get_where('data_drd', ['IDPelanggan' => $idpelanggan])->result_array();
+        // $datax =
+        //     [
+        //         'Periode' => $hasil[0]['Periode'],
+        //         'MeterLalu' => $hasil[0]['MeterLalu'],
+        //         'MeterKini' => $hasil[0]['MeterKini'], // menjadi meteran sekarang
+
+        //         'Kubikasi' => $hasil[0]['Kubikasi'],
+        //         'Pajak' => $hasil[0]['Pajak'],
+        //         'BiayaAdministrasi' => $hasil[0]['BiayaAdministrasi'],
+        //         'IDGol' => $hasil[0]['IDGol']
+        //     ];
+
+
+
+        // $awal = $datax['MeterKini'];
+        // $akhir = 2011;
+
+
+        // // penjualan 1 = 1 = 10 
+        // // penjualan 2 = 11 - 20
+        // // penjualan 3 = 21 - 30
+        // // penjualan 4 di atas 31
+
+        // $kubikasi = $akhir - $awal;
+
+        // $penjualan_1 = abs($kubikasi);
+        // $penjualan_2 = abs(10 - $penjualan_1);
+        // $penjualan_3 = abs(10 - $penjualan_2);
+        // $penjualan_4 = abs(10 - $penjualan_3);
+
+        // $data = [];
+
+        // if ($penjualan_1 <= 10) {
+
+        //     $data = [
+        //         'Informasi' => 'Penjualan 1 - 10',
+        //         'penjualan1' => $penjualan_1,
+        //         'penjualan2' => 0,
+        //         'penjualan3' => 0,
+        //         'penjualan4' => 0,
+        //     ];
+        // } elseif ($penjualan_2 <= 10) {
+        //     $data = [
+        //         'Informasi' => 'Penjualan 11 - 20',
+        //         'penjualan1' => $penjualan_1 - $penjualan_2,
+        //         'penjualan2' => $penjualan_2,
+        //         'penjualan3' => 0,
+        //         'penjualan4' => 0,
+        //     ];
+        // } elseif ($penjualan_3 <= 10) {
+        //     $data = [
+        //         'Informasi' => 'Penjualan 21 - 30',
+        //         'penjualan1' => $penjualan_1 - $penjualan_2,
+        //         'penjualan2' => $penjualan_1 - $penjualan_2,
+        //         'penjualan3' => $penjualan_3,
+        //         'penjualan4' => 0,
+        //     ];
+        // } else {
+        //     $data = [
+        //         'Informasi' => 'Penjualan di atas 30',
+        //         'penjualan1' => $penjualan_1 - $penjualan_2,
+        //         'penjualan2' => $penjualan_1 - $penjualan_2,
+        //         'penjualan3' => $penjualan_1 - $penjualan_2,
+        //         'penjualan4' => $penjualan_4,
+        //     ];
+        // }
+
+        // echo "Meteran Lama : " . $awal . "<br />";
+        // echo "Meteran Terkini : " . $akhir . "<br />";
+        // echo "Kubikasi : " . $kubikasi;
+
+        // echo "<hr />";
+        // echo "<pre>";
+        // print_r($data);
+        // echo "</pre>";
     }
 
 

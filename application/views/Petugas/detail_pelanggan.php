@@ -73,7 +73,7 @@
 
 
                 <div class="d-inline float-left">
-                    <a href="#" class="btn btn-sm btn-primary">Catat Meteran</a>
+                    <a href="<?php echo base_url('PetugasLapangan/petugas/inputMeteran/' . $datapelanggan['idpelanggan']); ?>" class="btn btn-sm btn-primary">Catat Meteran</a>
                     <a href="<?= base_url('petugas'); ?>" class="btn btn-sm btn-danger">Batal</a>
                 </div>
             </div>
